@@ -1,6 +1,7 @@
 import os
 import json
 from datetime import datetime
+from sys import argv
 
 todo_template = {"Tasks-Done": 0}
 todo_list = {"Tasks-Done": 0}
@@ -45,15 +46,56 @@ def clear_done_str():
 	for x, y in todo_list.items():
 		if done_str in str(y):
 			todo_list[x] = y.replace(done_str, "")
+	todo_list["Tasks-Done"] = 0
 
 to_view = True
-cmds = f"Commands:\nadd\tremove\nhelp\tclose\ndone\tclear\nreset"
+cmds = f"Commands:\nadd\tremove\nhelp\tclose\ndone\tremove all\nreset\n"
+explanation = "For the remove and done commands you simply type the word and when prompted input the index of the todo you want to remove or mark as done.\nThe reset command will bring all todos back to being unfinished.\nThe add command will give you a prompt to add a todo.\n"
+quick_cmds = f"Quick Command Line Commands: python3 todo_program.py -r (prints out the list without opening interface)\npython3 todo_program.py -a 'your-todo-here' (adds to todo list without opening interface)\npython3 todo_program.py -d indexesOfDoneTodos Sperated By a Space (marks those todos as done)\npython3 todo_program.py -reset (marks all todos as unfinished)"
 remove_prompt = f"{prompt_str}:REMOVE: "
 todo_list = load(save_file)
+
+
+def save_view_and_exit(to_save=True):
+	if to_save:
+		save(todo_list, save_file)
+	view_list()
+	exit()
+
+
+def quick_add(s):
+	print("Todo-Added!\n")
+	index = str(len(todo_list.keys()))
+	todo_list.update({index: s})
+	save_view_and_exit()
+
+
+if len(argv) == 2:
+	if argv[1] == "-r":
+		save_view_and_exit(False)
+	elif argv[1] == "-reset":
+		clear_done_str()
+		save_view_and_exit()
+
+if len(argv) >= 3:
+	if argv[1] == "-a":
+		quick_add(argv[2])
+	elif argv[1] == "-d":
+		for x in range(2, len(argv)):
+			if argv[x] in todo_list.keys():
+				if " --> Done" in todo_list[argv[x]]:
+					continue
+				todo_list[argv[x]] = todo_list[argv[x]] + " --> Done"
+				todo_list["Tasks-Done"] += 1
+		save_view_and_exit()
+
+		
 print("--TODO APP INITALIZED--")
 print(cmds)
 print(datetime.now())
 view_list()
+
+
 
 while True:
 	# Want to update the list based off of a user prompt
@@ -68,12 +110,14 @@ while True:
 			todo_list = refresh_keys()
 	elif cmd == "help":
 		print(cmds)
+		print(explanation)
+		print(quick_cmds)
 		to_view = False
 	elif cmd == "close":
 		print("Exiting")
 		save(todo_list, save_file)
 		break
-	elif cmd == "clear":
+	elif cmd == "remove all":
 		todo_list = todo_template
 		print("List cleared")
 	elif cmd == "done":
